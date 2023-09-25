@@ -13,6 +13,10 @@ contract DataDao is ERC721 {
     string public baseTokenUri;
     ERC721 dao_nft;
 
+    event memberAdded(address indexed member, uint256 tokenId);
+    event memberRemoved(address indexed member, uint256 tokenId);
+    event addedBaseUri(string baseUri);
+
     constructor (string memory name, address owner, string memory dao_nft_symbol) ERC721(name, dao_nft_symbol) {
         dao_name = name;
         dao_owner = owner;
@@ -26,17 +30,27 @@ contract DataDao is ERC721 {
         _;
     }
 
+    modifier checkOwner(address _owner) {
+        require(_owner == dao_owner, "Only owner can perform this txn.");
+        _;
+    }
+
     function addMember() public checkMember(msg.sender) returns (uint256) {
         // mint the nft to this address
         currentTokenId.increment();
         uint256 tokenId = currentTokenId.current();
         _safeMint(msg.sender, tokenId);
+        emit memberAdded(msg.sender, tokenId);
         return tokenId;
     }
 
-    function removeMember(address member_address) public {
+    function removeMember(address member_address, uint256 tokenId) public checkOwner(msg.sender) {
         // only owner should call this function
         // burn the nft for the member_address
+        uint256 tokenCount = dao_nft.balanceOf(member_address);
+        require(tokenCount > 0, "Member does not exists");
+        _burn(tokenId);
+        emit memberRemoved(member_address, tokenId);
     }
 
     function setBaseTokenUri(string memory _baseTokenUri) public {
