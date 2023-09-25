@@ -11,6 +11,7 @@ contract DataDao is ERC721 {
     string public dao_name;
     address public dao_owner;
     string public baseTokenUri;
+    bool public public_access = false;
     ERC721 dao_nft;
 
     event memberAdded(address indexed member, uint256 tokenId);
@@ -35,6 +36,13 @@ contract DataDao is ERC721 {
         _;
     }
 
+    modifier checkPublicAccess(address caller) {
+        if (public_access == false) {
+            require(caller == dao_owner, "Only owner can add in a ptivate DAO");
+        }
+        _;
+    }
+
     function addMember() public checkMember(msg.sender) returns (uint256) {
         // mint the nft to this address
         currentTokenId.increment();
@@ -51,6 +59,11 @@ contract DataDao is ERC721 {
         require(tokenCount > 0, "Member does not exists");
         _burn(tokenId);
         emit memberRemoved(member_address, tokenId);
+    }
+
+    function toggleDAOAccess() public checkOwner(msg.sender) returns (bool) {
+        public_access = !public_access;
+        return public_access;
     }
 
     function setBaseTokenUri(string memory _baseTokenUri) public {
